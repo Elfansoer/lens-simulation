@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -215,7 +216,6 @@ class CubeAxialLens : GradientLens {
     }
 }
 
-
 class CubeSphericalLens : GradientLens {
     public BoxCollider surfaceCollider;
     float refIndex;
@@ -293,6 +293,54 @@ class CubeSphericalRadialLens : GradientLens {
     override public Vector3 GetGradientNormal( Vector3 position ) {
         var relativePos = position - GetCenter();
         return Vector3.Normalize(relativePos);
+    }
+
+    public override bool TestEnter(Ray light, RaycastHit info) {
+        return info.collider==surfaceCollider;
+    }
+    Vector3 GetCenter() {
+        return surfaceCollider.gameObject.transform.position;
+    }
+
+    public override bool TestExit(Ray light, float ds, out RaycastHit info) {
+        // invert because its from inside
+        light.origin = light.GetPoint( ds );
+        light.direction = Vector3.Normalize(-light.direction);
+
+        if (surfaceCollider.Raycast( light, out info, ds )) {
+            info.normal = -info.normal;
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+class GRINDistribution {
+    public Func<Vector3, float> ValueFunc;
+    public Func<Vector3, Vector3> NormalFunc;
+}
+
+class CubeCustomDistributionLens : GradientLens {
+    public BoxCollider surfaceCollider;
+    public GRINDistribution distFunc;
+
+    public CubeCustomDistributionLens( GameObject gameObject, GRINDistribution distFunc) {
+        // create new box collider
+        surfaceCollider = gameObject.AddComponent<BoxCollider>();
+        isUniform = false;
+
+        this.distFunc = distFunc;
+    }
+
+    override public float GetGradientValue( Vector3 position ) {
+        var relativePos = position - GetCenter();
+        return distFunc.ValueFunc( relativePos );
+    }
+
+    override public Vector3 GetGradientNormal( Vector3 position ) {
+        var relativePos = position - GetCenter();
+        return distFunc.NormalFunc( relativePos );
     }
 
     public override bool TestEnter(Ray light, RaycastHit info) {

@@ -30,7 +30,7 @@ public class SimpleComponent : MonoBehaviour {
         if (Input.GetKey(KeyCode.LeftArrow)) direction += new Vector3(0,0,1);
         if (Input.GetKey(KeyCode.RightArrow)) direction += new Vector3(0,0,-1);
 
-        transform.position += direction * 5 * Time.deltaTime;
+        transform.position += direction * 2f * Time.deltaTime;
 
         var rotationSpeed = 0.3f;
         var NSRotation = 0.0f;
