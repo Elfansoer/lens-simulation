@@ -377,7 +377,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97d4c67f20236f043a1739549332a470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lensOptions: 3
+  lensOptions: 0
 --- !u!65 &1150931355
 BoxCollider:
   m_ObjectHideFlags: 0

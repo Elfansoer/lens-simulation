@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 class CubeLensComponent : MonoBehaviour {
-    public CubeCustomDistributionLens lens;
+    public CubeContainerLens lens;
     public int lensOptions = 0;
 
     List<GRINDistribution> distributions = new List<GRINDistribution>();
@@ -11,7 +11,7 @@ class CubeLensComponent : MonoBehaviour {
         CreateDistributions();
         int selectedDistribution = lensOptions%distributions.Count;
 
-        lens = new CubeCustomDistributionLens( gameObject, distributions[selectedDistribution] );
+        lens = new CubeContainerLens( gameObject, distributions[selectedDistribution] );
     }
 
     void Update() {
@@ -21,7 +21,7 @@ class CubeLensComponent : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.Alpha3)) lensOptions = 2;
         if (Input.GetKeyDown(KeyCode.Alpha4)) lensOptions = 3;
         
-        lens.distFunc = distributions[lensOptions];
+        lens.DistributionFunction = distributions[lensOptions];
     }
 
     void CreateDistributions() {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 class LineRender {
 
@@ -10,10 +11,7 @@ class LineRender {
 
     public void Create( GameObject o ) {
         // get LineRenderer
-        renderer = o.GetComponent<LineRenderer>();
-        if (!renderer) {
-            renderer = o.AddComponent<LineRenderer>();
-        }
+        renderer = o.GetOrAddComponent<LineRenderer>();
         renderer.material = new Material(Shader.Find("Sprites/Default"));
         transform = renderer.transform;
         ray = new Ray(transform.position,transform.forward);

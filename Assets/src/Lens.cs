@@ -36,16 +36,16 @@ abstract class Lens {
     }
 }
 
-abstract class GradientLens : Lens {
-    protected bool isUniform;
-
+abstract class GradientLens {
     // Get gradient normal at a given position within the lens
     // Gradient normal is defined as the direction which reflective value difference is greatest
     // For example, a linear gradient would have its normal be the gradient direction
     // A radial gradient has normals equal to direction from center
+    // Zero vector if uniform.
     abstract public Vector3 GetGradientNormal( Vector3 position );
 
-    // Get reflective index on a given position. Constant if uniform
+    // Get reflective index on a given position.
+    // Constant if uniform.
     abstract public float GetGradientValue( Vector3 position );
 
     // Test whether this raycasthit event is a proper event of the light entering the lens
@@ -98,8 +98,6 @@ abstract class GradientLens : Lens {
     }
 
     public Ray RefractFromGradient( Ray incidentRay, float ds ) {
-        if (isUniform) return incidentRay;
-
         // get normal
         var normal = GetGradientNormal( incidentRay.origin );
 
@@ -127,227 +125,32 @@ abstract class GradientLens : Lens {
     }
 }
 
-class CubeLens : GradientLens {
-    public BoxCollider surfaceCollider;
-    float refIndex;
-
-    public CubeLens( GameObject gameObject, float refractionIndex) {
-        // create new box collider
-        surfaceCollider = gameObject.AddComponent<BoxCollider>();
-        refIndex = refractionIndex;
-        isUniform = true;
-    }
-
-    override public float GetGradientValue( Vector3 position ) {
-        return refIndex;
-    }
-
-    override public Vector3 GetGradientNormal( Vector3 position ) {
-        return Vector3.zero;
-    }
-
-    public override bool TestEnter(Ray light, RaycastHit info) {
-        return info.collider==surfaceCollider;
-    }
-
-    public override bool TestExit(Ray light, float ds, out RaycastHit info) {
-        // invert because its from inside
-        light.origin = light.GetPoint( ds );
-        light.direction = Vector3.Normalize(-light.direction);
-
-        if (surfaceCollider.Raycast( light, out info, ds )) {
-            info.normal = -info.normal;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class CubeAxialLens : GradientLens {
-    public BoxCollider surfaceCollider;
-    float maxRefIndex;
-    float minRefIndex;
-    float radius;
-    Vector3 axisGradient;
-
-    public CubeAxialLens( GameObject gameObject, float minRefIndex, float maxRefIndex, float radius) {
-        // create new box collider
-        surfaceCollider = gameObject.AddComponent<BoxCollider>();
-        isUniform = false;
-
-        this.radius = radius;
-        this.minRefIndex = minRefIndex;
-        this.maxRefIndex = maxRefIndex;
-        axisGradient = new Vector3(1,0,0);
-    }
-
-    override public float GetGradientValue( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        var distanceFromAxis = Vector3.ProjectOnPlane( relativePos, axisGradient ).magnitude;
-
-        return Mathf.Lerp( maxRefIndex, minRefIndex, distanceFromAxis/radius );
-    }
-
-    override public Vector3 GetGradientNormal( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        return Vector3.Normalize( Vector3.ProjectOnPlane( relativePos, axisGradient ) );
-    }
-
-    Vector3 GetCenter() {
-        return surfaceCollider.gameObject.transform.position;
-    }
-
-    public override bool TestEnter(Ray light, RaycastHit info) {
-        return info.collider==surfaceCollider;
-    }
-
-    public override bool TestExit(Ray light, float ds, out RaycastHit info) {
-        // invert because its from inside
-        light.origin = light.GetPoint( ds );
-        light.direction = Vector3.Normalize(-light.direction);
-
-        if (surfaceCollider.Raycast( light, out info, ds )) {
-            info.normal = -info.normal;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class CubeSphericalLens : GradientLens {
-    public BoxCollider surfaceCollider;
-    float refIndex;
-    float radius;
-
-    public CubeSphericalLens( GameObject gameObject, float refractionIndex, float radius) {
-        // create new box collider
-        surfaceCollider = gameObject.AddComponent<BoxCollider>();
-        isUniform = false;
-
-        refIndex = refractionIndex;
-        this.radius = radius;
-    }
-
-    override public float GetGradientValue( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        if (relativePos.magnitude<radius) {
-            return refIndex;
-        } else {
-            return 1;
-        }
-    }
-
-    override public Vector3 GetGradientNormal( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        if (relativePos.magnitude>radius) {
-            return Vector3.zero;
-        } else {
-            return Vector3.Normalize(relativePos);
-        }
-    }
-
-    public override bool TestEnter(Ray light, RaycastHit info) {
-        return info.collider==surfaceCollider;
-    }
-    Vector3 GetCenter() {
-        return surfaceCollider.gameObject.transform.position;
-    }
-
-    public override bool TestExit(Ray light, float ds, out RaycastHit info) {
-        // invert because its from inside
-        light.origin = light.GetPoint( ds );
-        light.direction = Vector3.Normalize(-light.direction);
-
-        if (surfaceCollider.Raycast( light, out info, ds )) {
-            info.normal = -info.normal;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class CubeSphericalRadialLens : GradientLens {
-    public BoxCollider surfaceCollider;
-    float minRefIndex;
-    float maxRefIndex;
-    float radius;
-
-    public CubeSphericalRadialLens( GameObject gameObject, float minRefIndex, float maxRefIndex, float radius) {
-        // create new box collider
-        surfaceCollider = gameObject.AddComponent<BoxCollider>();
-        isUniform = false;
-
-        this.minRefIndex = minRefIndex;
-        this.maxRefIndex = maxRefIndex;
-        this.radius = radius;
-    }
-
-    override public float GetGradientValue( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        return Mathf.Lerp( maxRefIndex, minRefIndex, relativePos.magnitude/radius );
-    }
-
-    override public Vector3 GetGradientNormal( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        return Vector3.Normalize(relativePos);
-    }
-
-    public override bool TestEnter(Ray light, RaycastHit info) {
-        return info.collider==surfaceCollider;
-    }
-    Vector3 GetCenter() {
-        return surfaceCollider.gameObject.transform.position;
-    }
-
-    public override bool TestExit(Ray light, float ds, out RaycastHit info) {
-        // invert because its from inside
-        light.origin = light.GetPoint( ds );
-        light.direction = Vector3.Normalize(-light.direction);
-
-        if (surfaceCollider.Raycast( light, out info, ds )) {
-            info.normal = -info.normal;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
 class GRINDistribution {
     public Func<Vector3, float> ValueFunc;
     public Func<Vector3, Vector3> NormalFunc;
 }
 
-class CubeCustomDistributionLens : GradientLens {
-    public BoxCollider surfaceCollider;
-    public GRINDistribution distFunc;
+class CubeContainerLens : GradientLens {
+    BoxCollider surfaceCollider;
+    GRINDistribution distFunc;
 
-    public CubeCustomDistributionLens( GameObject gameObject, GRINDistribution distFunc) {
+    public CubeContainerLens( GameObject gameObject, GRINDistribution distFunc) {
         // create new box collider
         surfaceCollider = gameObject.AddComponent<BoxCollider>();
-        isUniform = false;
 
         this.distFunc = distFunc;
     }
 
     override public float GetGradientValue( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        return distFunc.ValueFunc( relativePos );
+        return ValueFunction( position - Center );
     }
 
     override public Vector3 GetGradientNormal( Vector3 position ) {
-        var relativePos = position - GetCenter();
-        return distFunc.NormalFunc( relativePos );
+        return NormalFunction( position - Center );
     }
 
     public override bool TestEnter(Ray light, RaycastHit info) {
         return info.collider==surfaceCollider;
-    }
-    Vector3 GetCenter() {
-        return surfaceCollider.gameObject.transform.position;
     }
 
     public override bool TestExit(Ray light, float ds, out RaycastHit info) {
@@ -361,5 +164,24 @@ class CubeCustomDistributionLens : GradientLens {
         } else {
             return false;
         }
+    }
+
+    Vector3 Center {
+        get { return surfaceCollider.gameObject.transform.position; }
+    }
+
+    public Func<Vector3, float> ValueFunction {
+        get { return distFunc.ValueFunc; }
+        set { distFunc.ValueFunc = value; }
+    }
+
+    public Func<Vector3, Vector3> NormalFunction {
+        get { return distFunc.NormalFunc; }
+        set { distFunc.NormalFunc = value; }
+    }
+
+    public GRINDistribution DistributionFunction {
+        get { return distFunc; }
+        set { distFunc = value; }
     }
 }
