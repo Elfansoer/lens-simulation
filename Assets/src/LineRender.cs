@@ -1,23 +1,25 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using UnityEngine.UIElements;
 
 class LineRender {
-
-    float length;
+    public float length;
     LineRenderer renderer;
     Transform transform;
     Ray ray;
 
     public void Create( GameObject o ) {
         // get LineRenderer
-        renderer = o.GetOrAddComponent<LineRenderer>();
+        renderer = o.GetComponent<LineRenderer>();
+        if (!renderer) {
+            renderer = o.AddComponent<LineRenderer>();
+        }
         renderer.material = new Material(Shader.Find("Sprites/Default"));
         transform = renderer.transform;
         ray = new Ray(transform.position,transform.forward);
 
         // Init Ray
-        length = 10;
+        length = 50;
 
         // Set renderer
         renderer.startWidth = 0.1f;
@@ -38,6 +40,7 @@ class LineRender {
 
         // set up points
         Vector3[] linePositions;
+        var remainingLength = length;
 
         // test colliding with any object
         if (Physics.Raycast(ray, out var hitInfo, length)) {
@@ -46,8 +49,12 @@ class LineRender {
 
             var lens = hitInfo.collider.gameObject.GetComponent<CubeLensComponent>();
             if (lens!=null) {
+                // set remaining length
+                remainingLength -= hitInfo.distance;
+
                 // get ray traces inside lens
-                var rays = lens.lens.Interact( ray, hitInfo, 1, 0.1f );
+                var rays = lens.lens.Interact( ray, hitInfo, remainingLength, out var rayLength );
+                remainingLength -= rayLength;
 
                 // add them to positions
                 foreach( var innerRay in rays ) {
@@ -56,7 +63,7 @@ class LineRender {
 
                 // add exit ray
                 var lastRay = rays[rays.Count-1]; 
-                pos.Add( lastRay.GetPoint( length ) );
+                pos.Add( lastRay.GetPoint( remainingLength ) );
             }
 
             linePositions = pos.ToArray();

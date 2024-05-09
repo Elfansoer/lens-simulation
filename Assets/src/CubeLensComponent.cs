@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 class CubeLensComponent : MonoBehaviour {
     public CubeContainerLens lens;
@@ -10,18 +11,7 @@ class CubeLensComponent : MonoBehaviour {
     void Awake() {
         CreateDistributions();
         int selectedDistribution = lensOptions%distributions.Count;
-
         lens = new CubeContainerLens( gameObject, distributions[selectedDistribution] );
-    }
-
-    void Update() {
-        // Switch lens
-        if (Input.GetKeyDown(KeyCode.Alpha1)) lensOptions = 0;
-        if (Input.GetKeyDown(KeyCode.Alpha2)) lensOptions = 1;
-        if (Input.GetKeyDown(KeyCode.Alpha3)) lensOptions = 2;
-        if (Input.GetKeyDown(KeyCode.Alpha4)) lensOptions = 3;
-        
-        lens.DistributionFunction = distributions[lensOptions];
     }
 
     void CreateDistributions() {
@@ -76,9 +66,31 @@ class CubeLensComponent : MonoBehaviour {
             }
         };
 
+        var radialSquared = new GRINDistribution{
+            ValueFunc = (Vector3 relativePos)=>{
+                var radius = 1.5f;
+                var t = Mathf.Clamp(relativePos.magnitude/radius, 0, 1) - 1;
+                var tt = t*t;
+
+                return Mathf.Lerp( 1f, 2f, tt );
+            },
+            NormalFunc = (Vector3 relativePos)=>{
+                return Vector3.Normalize(relativePos);
+            }
+        };
+
         distributions.Add( uniform );
         distributions.Add( cylindrical );
         distributions.Add( sphericalUniform );
         distributions.Add( sphericalRadial );
+        distributions.Add( radialSquared );
+    }
+
+    public int LensType {
+        get { return lensOptions; }
+        set {
+            lensOptions = value%distributions.Count;
+            lens.DistributionFunction = distributions[lensOptions];
+        }
     }
 }

@@ -152,6 +152,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 396c755a7d111b349ba6f3c482377080, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lineGenerator: {fileID: 1357939590}
+  lens: {fileID: 1150931353}
 --- !u!4 &390004315
 Transform:
   m_ObjectHideFlags: 0
@@ -485,9 +487,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1357939590}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 042d782b89d18824b8f9e24fb2e64950, type: 3}
+  m_Script: {fileID: 11500000, guid: 2a90815cf9fe4b64f9c05358e3445718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  length: 15
 --- !u!65 &1357939592
 BoxCollider:
   m_ObjectHideFlags: 0

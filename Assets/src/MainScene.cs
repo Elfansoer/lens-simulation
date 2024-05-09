@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 class MainScene : MonoBehaviour {
     Camera cam;
     public GameObject lineGenerator;
+    public GameObject lens;
     void Awake() {
         cam = Camera.main;
     }
@@ -11,6 +12,7 @@ class MainScene : MonoBehaviour {
     void FixedUpdate() {
         CameraMovement();
         LineRendererMovement();
+        LensSelector();
     }
 
     void CameraMovement() {
@@ -54,4 +56,14 @@ class MainScene : MonoBehaviour {
         lineGenerator.transform.Rotate(NSRotation,WERotation,0);
     }
 
+    void LensSelector() {
+        var lensComponent = lens.GetComponent<CubeLensComponent>();
+
+        // Switch lens
+        if (Input.GetKeyDown(KeyCode.Alpha1)) lensComponent.LensType = 0;
+        if (Input.GetKeyDown(KeyCode.Alpha2)) lensComponent.LensType = 1;
+        if (Input.GetKeyDown(KeyCode.Alpha3)) lensComponent.LensType = 2;
+        if (Input.GetKeyDown(KeyCode.Alpha4)) lensComponent.LensType = 3;
+        if (Input.GetKeyDown(KeyCode.Alpha5)) lensComponent.LensType = 4;
+    }
 }

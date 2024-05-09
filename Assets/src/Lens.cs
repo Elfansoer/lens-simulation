@@ -55,7 +55,7 @@ abstract class GradientLens {
     // Test whether this ray segment actually exits the lens
     abstract public bool TestExit( Ray light, float ds, out RaycastHit info );
 
-    public List<Ray> Interact( Ray incident, RaycastHit enterInfo, float outsideRefIndex, float ds ) {
+    public List<Ray> Interact( Ray incident, RaycastHit enterInfo, float maxLength, out float length, float ds = 0.1f, float outsideRefIndex = 1 ) {
         var rays = new List<Ray>();
 
         // add entrance point ray
@@ -63,9 +63,8 @@ abstract class GradientLens {
         rays.Add( enterRay );
 
         // traverse in small steps
-        var maxSegments = 100;
-        var ctr = 0;
-        while(ctr<maxSegments) {
+        float currentLength = 0;
+        while(currentLength<maxLength) {
             var lastRay = rays[rays.Count-1];
 
             // check if this step moves out of lens
@@ -75,6 +74,8 @@ abstract class GradientLens {
 
                 rays.Add( maybeExitRay );
 
+                currentLength += info.distance;
+
                 // if this is NOT a reflection, break
                 if (Vector3.Dot( maybeExitRay.direction, info.normal )<0) {
                     break;
@@ -82,18 +83,18 @@ abstract class GradientLens {
 
             // still inside lens
             } else {
-
                 // advance previous ray by ds to get next ray
                 var nextRay = new Ray( lastRay.GetPoint( ds ), lastRay.direction );
 
                 // calculate refracted ray
                 var refractRay = RefractFromGradient( nextRay, ds );
                 rays.Add(refractRay);
-            }
 
-            ctr++;
+                currentLength += ds;
+            }
         }
 
+        length = currentLength;
         return rays;
     }
 
@@ -159,6 +160,7 @@ class CubeContainerLens : GradientLens {
         light.direction = Vector3.Normalize(-light.direction);
 
         if (surfaceCollider.Raycast( light, out info, ds )) {
+            info.distance = ds - info.distance;
             info.normal = -info.normal;
             return true;
         } else {
